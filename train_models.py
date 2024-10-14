@@ -10,6 +10,7 @@ from sklearn.preprocessing import label_binarize
 from LSTM_extraction import LSTMFeatureExtractor, create_lstm_model
 from itertools import cycle
 import tensorflow as tf
+import joblib
 
 
 def train_random_forest(X, y):
@@ -55,6 +56,37 @@ def train_model(X, y, model_type):
         return train_lstm(X, y)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
+
+
+def train_new_model(selected_model: str):
+    st.sidebar.info(f"開始訓練新的 {selected_model} 模型...")
+
+    # 加載訓練數據
+    X_train, y_train = load_training_data()  # 您需要實現這個函數來加載訓練數據
+
+    # 訓練模型
+    model, lstm_extractor, history = train_model(X_train, y_train, selected_model)
+
+    # 保存模型
+    save_model(model, selected_model)
+
+    # 顯示訓練結果
+    display_training_results(selected_model, model, X_train, y_train, history)
+
+    st.sidebar.success(f"新的 {selected_model} 模型訓練完成並保存！")
+
+    return model, lstm_extractor
+
+
+def save_model(model, model_name):
+    if model_name == "LSTM":
+        model_path = MODEL_PATH_TEMPLATE.format(model_name)
+        model.save(model_path)
+    else:
+        model_path = f"models/{model_name.lower().replace(' ', '_')}_model.joblib"
+        joblib.dump(model, model_path)
+
+    st.success(f"{model_name} 模型已保存到 {model_path}")
 
 
 def evaluate_model(model, X_test, y_test, model_type):
